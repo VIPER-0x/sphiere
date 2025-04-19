@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>3D Sphere with HTML5 Canvas</title>
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      background-color: #f0f0f0;
+    }
+  </style>
+  <script type="text/javascript">
+    function Point3D(x, y, z) {
+      this.x = x;
+      this.y = y;
+      this.z = z;
+    }
+
+    function Sphere3D(radius, segments) {
+      this.points = [];
+      this.radius = radius;
+      this.segments = segments;
+
+      for (let theta = 0; theta < Math.PI; theta += Math.PI / segments) {
+        for (let phi = 0; phi < 2 * Math.PI; phi += Math.PI / segments) {
+          let x = radius * Math.sin(theta) * Math.cos(phi);
+          let y = radius * Math.sin(theta) * Math.sin(phi);
+          let z = radius * Math.cos(theta);
+          this.points.push(new Point3D(x, y, z));
+        }
+      }
+    }
+
+    function rotateX(point, angle) {
+      let cos = Math.cos(angle);
+      let sin = Math.sin(angle);
+      let y = point.y * cos - point.z * sin;
+      let z = point.y * sin + point.z * cos;
+      return new Point3D(point.x, y, z);
+    }
+
+    function rotateY(point, angle) {
+      let cos = Math.cos(angle);
+      let sin = Math.sin(angle);
+      let x = point.z * sin + point.x * cos;
+      let z = point.z * cos - point.x * sin;
+      return new Point3D(x, point.y, z);
+    }
+
+    function rotateZ(point, angle) {
+      let cos = Math.cos(angle);
+      let sin = Math.sin(angle);
+      let x = point.x * cos - point.y * sin;
+      let y = point.x * sin + point.y * cos;
+      return new Point3D(x, y, point.z);
+    }
+
+    function project(point, width, height, fov, distance) {
+      let factor = fov / (distance + point.z);
+      let x = point.x * factor + width / 2;
+      let y = point.y * factor + height / 2;
+      return new Point3D(x, y, point.z);
+    }
+
+    function drawSphere(ctx, sphere, width, height, fov, distance) {
+      ctx.clearRect(0, 0, width, height);
+
+      for (let point of sphere.points) {
+        let rotated = rotateX(point, angle);
+        rotated = rotateY(rotated, angle);
+        rotated = rotateZ(rotated, angle);
+        let projected = project(rotated, width, height, fov, distance);
+
+        let brightness = (projected.z + radius) / (2 * radius);
+        let color = `rgba(${Math.floor(255 * brightness)}, ${Math.floor(255 * brightness)}, 255, 0.8)`;
+
+        ctx.beginPath();
+        ctx.arc(projected.x, projected.y, 2, 0, 2 * Math.PI);
+        ctx.fillStyle = color;
+        ctx.fill();
+      }
+    }
+
+    let canvas, ctx, sphere, radius, angle;
+
+    function init() {
+      canvas = document.getElementById('sphere3d');
+      ctx = canvas.getContext('2d');
+      radius = 100;
+      angle = 0;
+      sphere = new Sphere3D(radius, 20);
+
+      function animate() {
+        angle += 0.01;
+        drawSphere(ctx, sphere, canvas.width, canvas.height, 500, 3 * radius);
+        requestAnimationFrame(animate);
+      }
+
+      animate();
+    }
+  </script>
+</head>
+<body onload="init();">
+  <canvas id="sphere3d" width="500" height="500">
+    Text to alert visitors that the Canvas is not supported by your browser.
+  </canvas>
+</body>
+</html>
